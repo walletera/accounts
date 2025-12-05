@@ -1,0 +1,25 @@
+openapi: "3.0.0"
+
+components:
+  schemas:
+    account:
+      type: "object"
+      description: "A Bank or PSP account"
+      allOf:
+        - properties:
+            id:
+              type: "string"
+              format: "uuid"
+              description: "Walletera account unique identifier"
+            customerId:
+              description: "Walletera unique identifier of the customer (institution) that owns the account"
+              type: string
+              format: uuid
+            customerAccountId:
+              type: "string"
+              description: "Identifier assigned to the account by the customer"
+          required:
+            - id
+            - currency
+            - customerId
+        - $ref: "https://raw.githubusercontent.com/walletera/payments-types/refs/heads/main/openapi/account.yaml#/components/schemas/account"

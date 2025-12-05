@@ -1,0 +1,47 @@
+openapi: "3.0.0"
+
+info:
+  title: "Accounts Private API"
+  description: "API to list accounts"
+  version: "1.0.0"
+
+paths:
+  /accounts:
+    get:
+      summary: "Allows to retrieve a list of accounts based on search parameters"
+      operationId: "getAccount"
+      parameters:
+        - in: query
+          name: cvu
+          schema:
+            type: string
+            pattern: '^\d{22}$'
+        - in: query
+          name: cvuAlias
+          schema:
+            type: string
+            pattern: '^[\w\.-]{6,20}$'
+        - in: query
+          name: dinoPayAccountNumber
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "At least one account was found matching the provided parameters"
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 100
+                items:
+                  $ref: "account.yaml#/components/schemas/account"
+        "404":
+          description: "There is no account matching the provided parameters"
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT # optional, arbitrary value for documentation purposes

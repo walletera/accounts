@@ -1,0 +1,126 @@
+openapi: "3.0.0"
+
+info:
+  title: "Accounts Public API"
+  description: "API to create, delete and list accounts"
+  version: "1.0.0"
+
+security:
+  - bearerAuth: [ ]
+
+paths:
+  /{customerId}/accounts:
+    post:
+      summary: "Creates a new account"
+      operationId: "postAccount"
+      parameters:
+        - name: "X-Walletera-Correlation-Id"
+          in: "header"
+          description: "a UUID that allows to trace end-to-end transactions"
+          required: false
+          schema:
+            type: string
+            format: "uuid"
+        - name: "customerId"
+          in: "path"
+          description: "Customer Id"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "account.yaml#/components/schemas/account"
+      responses:
+        "201":
+          description: "Account successfully created"
+          content:
+            application/json:
+              schema:
+                $ref: "account.yaml#/components/schemas/account"
+        "400":
+          description: "The provided parameters are incorrect"
+          content:
+            application/json:
+              schema:
+                $ref: "https://raw.githubusercontent.com/walletera/payments-types/refs/heads/main/openapi/api-error.yaml#/components/schemas/apiError"
+        "401":
+          description: "Unauthorized"
+        "409":
+          description: "The payment already exist"
+          content:
+            application/json:
+              schema:
+                $ref: "https://raw.githubusercontent.com/walletera/payments-types/refs/heads/main/openapi/api-error.yaml#/components/schemas/apiError"
+        "500":
+          description: "Internal error"
+          content:
+            application/json:
+              schema:
+                $ref: "https://raw.githubusercontent.com/walletera/payments-types/refs/heads/main/openapi/api-error.yaml#/components/schemas/apiError"
+
+    get:
+      summary: "Retrieves a list of accounts based on search parameters"
+      operationId: "list-accounts"
+      parameters:
+        - name: "customerId"
+          in: "path"
+          description: "Customer Id"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+        - in: query
+          name: cvu
+          schema:
+            type: string
+            pattern: '^\d{22}$'
+        - in: query
+          name: cvuAlias
+          schema:
+            type: string
+            pattern: '^[\w\.-]{6,20}$'
+        - in: query
+          name: dinoPayAccountNumber
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: "Number of accounts to return (for pagination)."
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: offset
+          in: query
+          description: "Offset for pagination."
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: "At least one account was found matching the provided parameters"
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 100
+                items:
+                  $ref: "account.yaml#/components/schemas/account"
+        "404":
+          description: "There is no account matching the provided parameters"
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT # optional, arbitrary value for documentation purposes
