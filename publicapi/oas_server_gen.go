@@ -8,18 +8,18 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
-	// ListAccounts implements list-accounts operation.
-	//
-	// Retrieves a list of accounts based on search parameters.
-	//
-	// GET /{customerId}/accounts
-	ListAccounts(ctx context.Context, params ListAccountsParams) (ListAccountsRes, error)
-	// PostAccount implements postAccount operation.
+	// CreateAccount implements createAccount operation.
 	//
 	// Creates a new account.
 	//
-	// POST /{customerId}/accounts
-	PostAccount(ctx context.Context, req *Account, params PostAccountParams) (PostAccountRes, error)
+	// POST /accounts
+	CreateAccount(ctx context.Context, req *Account, params CreateAccountParams) (CreateAccountRes, error)
+	// ListAccounts implements listAccounts operation.
+	//
+	// Retrieves a list of accounts based on search parameters.
+	//
+	// GET /accounts
+	ListAccounts(ctx context.Context, params ListAccountsParams) (ListAccountsRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

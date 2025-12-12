@@ -1052,8 +1052,8 @@ func (s *DinopayAccountDetails) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes GetAccountOKApplicationJSON as json.
-func (s GetAccountOKApplicationJSON) Encode(e *jx.Encoder) {
+// Encode encodes ListAccountsOKApplicationJSON as json.
+func (s ListAccountsOKApplicationJSON) Encode(e *jx.Encoder) {
 	unwrapped := []Account(s)
 
 	e.ArrStart()
@@ -1063,10 +1063,10 @@ func (s GetAccountOKApplicationJSON) Encode(e *jx.Encoder) {
 	e.ArrEnd()
 }
 
-// Decode decodes GetAccountOKApplicationJSON from json.
-func (s *GetAccountOKApplicationJSON) Decode(d *jx.Decoder) error {
+// Decode decodes ListAccountsOKApplicationJSON from json.
+func (s *ListAccountsOKApplicationJSON) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode GetAccountOKApplicationJSON to nil")
+		return errors.New("invalid: unable to decode ListAccountsOKApplicationJSON to nil")
 	}
 	var unwrapped []Account
 	if err := func() error {
@@ -1085,19 +1085,19 @@ func (s *GetAccountOKApplicationJSON) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = GetAccountOKApplicationJSON(unwrapped)
+	*s = ListAccountsOKApplicationJSON(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s GetAccountOKApplicationJSON) MarshalJSON() ([]byte, error) {
+func (s ListAccountsOKApplicationJSON) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *GetAccountOKApplicationJSON) UnmarshalJSON(data []byte) error {
+func (s *ListAccountsOKApplicationJSON) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

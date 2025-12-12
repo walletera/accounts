@@ -262,7 +262,7 @@ func (s *CvuCvuRoutingInfo) Validate() error {
 	return nil
 }
 
-func (s GetAccountOKApplicationJSON) Validate() error {
+func (s ListAccountsOKApplicationJSON) Validate() error {
 	alias := ([]Account)(s)
 	if alias == nil {
 		return errors.New("nil is invalid value")

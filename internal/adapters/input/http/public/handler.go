@@ -5,6 +5,7 @@ import (
     "log/slog"
 
     "github.com/walletera/accounts/internal/domain/accounts"
+    "github.com/walletera/accounts/pkg/logattr"
     "github.com/walletera/accounts/publicapi"
 )
 
@@ -20,11 +21,46 @@ func NewHandler(repository accounts.Repository, logger *slog.Logger) *Handler {
 }
 
 func (h Handler) ListAccounts(ctx context.Context, params publicapi.ListAccountsParams) (publicapi.ListAccountsRes, error) {
-    //TODO implement me
-    panic("implement me")
+    result, err := h.repository.SearchAccounts(ctx, params)
+    if err != nil {
+        h.logger.Error(
+            "failed listing accounts",
+            logattr.Error(err.Error()),
+        )
+        // FIXME should be internal error
+        return &publicapi.ListAccountsNotFound{}, nil
+    }
+    var accountList []publicapi.Account
+    for {
+        ok, account, err := result.Iterator.Next()
+        if err != nil {
+            h.logger.Error(
+                "failed listing accounts",
+                logattr.Error(err.Error()),
+            )
+            return &publicapi.ListAccountsNotFound{}, nil
+        }
+        if !ok {
+            break
+        }
+        accountList = append(accountList, account)
+    }
+    resp := publicapi.ListAccountsOKApplicationJSON(accountList)
+    return &resp, nil
 }
 
-func (h Handler) PostAccount(ctx context.Context, req *publicapi.Account, params publicapi.PostAccountParams) (publicapi.PostAccountRes, error) {
-    //TODO implement me
-    panic("implement me")
+func (h Handler) CreateAccount(ctx context.Context, req *publicapi.Account, _ publicapi.CreateAccountParams) (publicapi.CreateAccountRes, error) {
+    werr := h.repository.SaveAccount(ctx, *req)
+    if werr != nil {
+        h.logger.Error(
+            "failed saving payment",
+            logattr.Error(werr.Message()),
+        )
+        return &publicapi.CreateAccountInternalServerError{
+            ErrorMessage: werr.Message(),
+            ErrorCode:    werr.Code().String(),
+        }, nil
+    }
+    h.logger.Info("account saved")
+    return req, nil
 }

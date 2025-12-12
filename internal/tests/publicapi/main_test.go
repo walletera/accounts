@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 
 const (
     startupTimeout               = 10 * time.Second
-    containersTerminationTimeout = 10 * time.Second
+    containersTerminationTimeout = 20 * time.Second
 )
 
 func startMongoDBContainer(ctx context.Context) (func() error, error) {

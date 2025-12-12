@@ -28,18 +28,18 @@ func trimTrailingSlashes(u *url.URL) {
 
 // Invoker invokes operations described by OpenAPI v3 specification.
 type Invoker interface {
-	// ListAccounts invokes list-accounts operation.
-	//
-	// Retrieves a list of accounts based on search parameters.
-	//
-	// GET /{customerId}/accounts
-	ListAccounts(ctx context.Context, params ListAccountsParams) (ListAccountsRes, error)
-	// PostAccount invokes postAccount operation.
+	// CreateAccount invokes createAccount operation.
 	//
 	// Creates a new account.
 	//
-	// POST /{customerId}/accounts
-	PostAccount(ctx context.Context, request *Account, params PostAccountParams) (PostAccountRes, error)
+	// POST /accounts
+	CreateAccount(ctx context.Context, request *Account, params CreateAccountParams) (CreateAccountRes, error)
+	// ListAccounts invokes listAccounts operation.
+	//
+	// Retrieves a list of accounts based on search parameters.
+	//
+	// GET /accounts
+	ListAccounts(ctx context.Context, params ListAccountsParams) (ListAccountsRes, error)
 }
 
 // Client implements OAS client.
@@ -87,11 +87,137 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 	return u
 }
 
-// ListAccounts invokes list-accounts operation.
+// CreateAccount invokes createAccount operation.
+//
+// Creates a new account.
+//
+// POST /accounts
+func (c *Client) CreateAccount(ctx context.Context, request *Account, params CreateAccountParams) (CreateAccountRes, error) {
+	res, err := c.sendCreateAccount(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendCreateAccount(ctx context.Context, request *Account, params CreateAccountParams) (res CreateAccountRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createAccount"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/accounts"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateAccountOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/accounts"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateAccountRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "EncodeHeaderParams"
+	h := uri.NewHeaderEncoder(r.Header)
+	{
+		cfg := uri.HeaderParameterEncodingConfig{
+			Name:    "X-Walletera-Correlation-Id",
+			Explode: false,
+		}
+		if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.XWalleteraCorrelationID.Get(); ok {
+				return e.EncodeValue(conv.UUIDToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode header")
+		}
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, CreateAccountOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateAccountResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListAccounts invokes listAccounts operation.
 //
 // Retrieves a list of accounts based on search parameters.
 //
-// GET /{customerId}/accounts
+// GET /accounts
 func (c *Client) ListAccounts(ctx context.Context, params ListAccountsParams) (ListAccountsRes, error) {
 	res, err := c.sendListAccounts(ctx, params)
 	return res, err
@@ -99,9 +225,9 @@ func (c *Client) ListAccounts(ctx context.Context, params ListAccountsParams) (L
 
 func (c *Client) sendListAccounts(ctx context.Context, params ListAccountsParams) (res ListAccountsRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("list-accounts"),
+		otelogen.OperationID("listAccounts"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/{customerId}/accounts"),
+		semconv.URLTemplateKey.String("/accounts"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -134,31 +260,46 @@ func (c *Client) sendListAccounts(ctx context.Context, params ListAccountsParams
 
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/"
-	{
-		// Encode "customerId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "customerId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			return e.EncodeValue(conv.UUIDToString(params.CustomerId))
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/accounts"
+	var pathParts [1]string
+	pathParts[0] = "/accounts"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeQueryParams"
 	q := uri.NewQueryEncoder()
+	{
+		// Encode "id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ID.Get(); ok {
+				return e.EncodeValue(conv.UUIDToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "customerId" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "customerId",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.CustomerId.Get(); ok {
+				return e.EncodeValue(conv.UUIDToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
 	{
 		// Encode "cvu" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
@@ -294,151 +435,6 @@ func (c *Client) sendListAccounts(ctx context.Context, params ListAccountsParams
 
 	stage = "DecodeResponse"
 	result, err := decodeListAccountsResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// PostAccount invokes postAccount operation.
-//
-// Creates a new account.
-//
-// POST /{customerId}/accounts
-func (c *Client) PostAccount(ctx context.Context, request *Account, params PostAccountParams) (PostAccountRes, error) {
-	res, err := c.sendPostAccount(ctx, request, params)
-	return res, err
-}
-
-func (c *Client) sendPostAccount(ctx context.Context, request *Account, params PostAccountParams) (res PostAccountRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("postAccount"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/{customerId}/accounts"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, PostAccountOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/"
-	{
-		// Encode "customerId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "customerId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			return e.EncodeValue(conv.UUIDToString(params.CustomerId))
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/accounts"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodePostAccountRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	stage = "EncodeHeaderParams"
-	h := uri.NewHeaderEncoder(r.Header)
-	{
-		cfg := uri.HeaderParameterEncodingConfig{
-			Name:    "X-Walletera-Correlation-Id",
-			Explode: false,
-		}
-		if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.XWalleteraCorrelationID.Get(); ok {
-				return e.EncodeValue(conv.UUIDToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode header")
-		}
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, PostAccountOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	defer resp.Body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodePostAccountResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

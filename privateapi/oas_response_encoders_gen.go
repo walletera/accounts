@@ -11,9 +11,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func encodeGetAccountResponse(response GetAccountRes, w http.ResponseWriter, span trace.Span) error {
+func encodeListAccountsResponse(response ListAccountsRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *GetAccountOKApplicationJSON:
+	case *ListAccountsOKApplicationJSON:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
@@ -26,7 +26,7 @@ func encodeGetAccountResponse(response GetAccountRes, w http.ResponseWriter, spa
 
 		return nil
 
-	case *GetAccountNotFound:
+	case *ListAccountsNotFound:
 		w.WriteHeader(404)
 		span.SetStatus(codes.Error, http.StatusText(404))
 

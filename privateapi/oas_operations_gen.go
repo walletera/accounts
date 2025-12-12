@@ -6,5 +6,5 @@ package privateapi
 type OperationName = string
 
 const (
-	GetAccountOperation OperationName = "GetAccount"
+	ListAccountsOperation OperationName = "ListAccounts"
 )

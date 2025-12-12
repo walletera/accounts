@@ -33,22 +33,22 @@ func (c *codeRecorder) Unwrap() http.ResponseWriter {
 	return c.ResponseWriter
 }
 
-// handleGetAccountRequest handles getAccount operation.
+// handleListAccountsRequest handles listAccounts operation.
 //
 // Allows to retrieve a list of accounts based on search parameters.
 //
 // GET /accounts
-func (s *Server) handleGetAccountRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleListAccountsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getAccount"),
+		otelogen.OperationID("listAccounts"),
 		semconv.HTTPRequestMethodKey.String("GET"),
 		semconv.HTTPRouteKey.String("/accounts"),
 	}
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetAccountOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), ListAccountsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -103,11 +103,11 @@ func (s *Server) handleGetAccountRequest(args [0]string, argsEscaped bool, w htt
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetAccountOperation,
-			ID:   "getAccount",
+			Name: ListAccountsOperation,
+			ID:   "listAccounts",
 		}
 	)
-	params, err := decodeGetAccountParams(args, argsEscaped, r)
+	params, err := decodeListAccountsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -120,16 +120,24 @@ func (s *Server) handleGetAccountRequest(args [0]string, argsEscaped bool, w htt
 
 	var rawBody []byte
 
-	var response GetAccountRes
+	var response ListAccountsRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetAccountOperation,
+			OperationName:    ListAccountsOperation,
 			OperationSummary: "Allows to retrieve a list of accounts based on search parameters",
-			OperationID:      "getAccount",
+			OperationID:      "listAccounts",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
+				{
+					Name: "id",
+					In:   "query",
+				}: params.ID,
+				{
+					Name: "customerId",
+					In:   "query",
+				}: params.CustomerId,
 				{
 					Name: "cvu",
 					In:   "query",
@@ -142,14 +150,22 @@ func (s *Server) handleGetAccountRequest(args [0]string, argsEscaped bool, w htt
 					Name: "dinoPayAccountNumber",
 					In:   "query",
 				}: params.DinoPayAccountNumber,
+				{
+					Name: "limit",
+					In:   "query",
+				}: params.Limit,
+				{
+					Name: "offset",
+					In:   "query",
+				}: params.Offset,
 			},
 			Raw: r,
 		}
 
 		type (
 			Request  = struct{}
-			Params   = GetAccountParams
-			Response = GetAccountRes
+			Params   = ListAccountsParams
+			Response = ListAccountsRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -158,14 +174,14 @@ func (s *Server) handleGetAccountRequest(args [0]string, argsEscaped bool, w htt
 		](
 			m,
 			mreq,
-			unpackGetAccountParams,
+			unpackListAccountsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetAccount(ctx, params)
+				response, err = s.h.ListAccounts(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetAccount(ctx, params)
+		response, err = s.h.ListAccounts(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -173,7 +189,7 @@ func (s *Server) handleGetAccountRequest(args [0]string, argsEscaped bool, w htt
 		return
 	}
 
-	if err := encodeGetAccountResponse(response, w, span); err != nil {
+	if err := encodeListAccountsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)

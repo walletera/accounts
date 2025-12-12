@@ -14,7 +14,7 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-func (s *Server) decodePostAccountRequest(r *http.Request) (
+func (s *Server) decodeCreateAccountRequest(r *http.Request) (
 	req *Account,
 	rawBody []byte,
 	close func() error,

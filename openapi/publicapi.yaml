@@ -9,10 +9,10 @@ security:
   - bearerAuth: [ ]
 
 paths:
-  /{customerId}/accounts:
+  /accounts:
     post:
       summary: "Creates a new account"
-      operationId: "postAccount"
+      operationId: "createAccount"
       parameters:
         - name: "X-Walletera-Correlation-Id"
           in: "header"
@@ -20,13 +20,6 @@ paths:
           required: false
           schema:
             type: string
-            format: "uuid"
-        - name: "customerId"
-          in: "path"
-          description: "Customer Id"
-          required: true
-          schema:
-            type: "string"
             format: "uuid"
       requestBody:
         required: true
@@ -64,15 +57,19 @@ paths:
 
     get:
       summary: "Retrieves a list of accounts based on search parameters"
-      operationId: "list-accounts"
+      operationId: "listAccounts"
       parameters:
-        - name: "customerId"
-          in: "path"
-          description: "Customer Id"
-          required: true
+        - in: query
+          name: id
           schema:
-            type: "string"
-            format: "uuid"
+            type: string
+            format: uuid
+        - name: customerId
+          in: query
+          description: "Customer Id"
+          schema:
+            type: string
+            format: uuid
         - in: query
           name: cvu
           schema:
@@ -116,6 +113,14 @@ paths:
                   $ref: "account.yaml#/components/schemas/account"
         "404":
           description: "There is no account matching the provided parameters"
+        "401":
+          description: "Unauthorized"
+        "500":
+          description: "Internal error"
+          content:
+            application/json:
+              schema:
+                $ref: "https://raw.githubusercontent.com/walletera/payments-types/refs/heads/main/openapi/api-error.yaml#/components/schemas/apiError"
 
 components:
 

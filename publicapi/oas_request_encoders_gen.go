@@ -10,7 +10,7 @@ import (
 	ht "github.com/ogen-go/ogen/http"
 )
 
-func encodePostAccountRequest(
+func encodeCreateAccountRequest(
 	req *Account,
 	r *http.Request,
 ) error {

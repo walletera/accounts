@@ -27,12 +27,12 @@ func trimTrailingSlashes(u *url.URL) {
 
 // Invoker invokes operations described by OpenAPI v3 specification.
 type Invoker interface {
-	// GetAccount invokes getAccount operation.
+	// ListAccounts invokes listAccounts operation.
 	//
 	// Allows to retrieve a list of accounts based on search parameters.
 	//
 	// GET /accounts
-	GetAccount(ctx context.Context, params GetAccountParams) (GetAccountRes, error)
+	ListAccounts(ctx context.Context, params ListAccountsParams) (ListAccountsRes, error)
 }
 
 // Client implements OAS client.
@@ -78,19 +78,19 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 	return u
 }
 
-// GetAccount invokes getAccount operation.
+// ListAccounts invokes listAccounts operation.
 //
 // Allows to retrieve a list of accounts based on search parameters.
 //
 // GET /accounts
-func (c *Client) GetAccount(ctx context.Context, params GetAccountParams) (GetAccountRes, error) {
-	res, err := c.sendGetAccount(ctx, params)
+func (c *Client) ListAccounts(ctx context.Context, params ListAccountsParams) (ListAccountsRes, error) {
+	res, err := c.sendListAccounts(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetAccount(ctx context.Context, params GetAccountParams) (res GetAccountRes, err error) {
+func (c *Client) sendListAccounts(ctx context.Context, params ListAccountsParams) (res ListAccountsRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getAccount"),
+		otelogen.OperationID("listAccounts"),
 		semconv.HTTPRequestMethodKey.String("GET"),
 		semconv.URLTemplateKey.String("/accounts"),
 	}
@@ -108,7 +108,7 @@ func (c *Client) sendGetAccount(ctx context.Context, params GetAccountParams) (r
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetAccountOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, ListAccountsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -131,6 +131,40 @@ func (c *Client) sendGetAccount(ctx context.Context, params GetAccountParams) (r
 
 	stage = "EncodeQueryParams"
 	q := uri.NewQueryEncoder()
+	{
+		// Encode "id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ID.Get(); ok {
+				return e.EncodeValue(conv.UUIDToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "customerId" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "customerId",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.CustomerId.Get(); ok {
+				return e.EncodeValue(conv.UUIDToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
 	{
 		// Encode "cvu" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
@@ -182,6 +216,40 @@ func (c *Client) sendGetAccount(ctx context.Context, params GetAccountParams) (r
 			return res, errors.Wrap(err, "encode query")
 		}
 	}
+	{
+		// Encode "limit" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "limit",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Limit.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "offset" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "offset",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Offset.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
 	u.RawQuery = q.Values().Encode()
 
 	stage = "EncodeRequest"
@@ -198,7 +266,7 @@ func (c *Client) sendGetAccount(ctx context.Context, params GetAccountParams) (r
 	defer resp.Body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetAccountResponse(resp)
+	result, err := decodeListAccountsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

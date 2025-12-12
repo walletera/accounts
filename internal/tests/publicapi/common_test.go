@@ -21,8 +21,6 @@ const (
     appKey                    = "app"
     appCtxCancelFuncKey       = "appCtxCancelFuncKey"
     logsWatcherKey            = "logsWatcher"
-    rawEventKey               = "rawEvent"
-    deserializedEventKey      = "deserializedEvent"
     logsWatcherWaitForTimeout = 5 * time.Second
     publicApiHttpServerPort   = 8484
     mongodbURL                = "mongodb://localhost:27017/?retryWrites=true&w=majority"
@@ -64,40 +62,6 @@ func afterScenarioHook(ctx context.Context, _ *godog.Scenario, err error) (conte
     err = logsWatcher.Stop()
     if err != nil {
         return ctx, fmt.Errorf("failed stopping the logsWatcher: %w", err)
-    }
-
-    return ctx, nil
-}
-
-func aRunningPaymentsReadModel(ctx context.Context) (context.Context, error) {
-    logHandler := logsWatcherFromCtx(ctx).DecoratedHandler()
-
-    appCtx, appCtxCancelFunc := context.WithCancel(ctx)
-
-    accountsApp, err := app.NewApp(
-        app.WithPublicAPIConfig(app.PublicAPIConfig{
-            PublicAPIHttpServerPort: publicApiHttpServerPort,
-        }),
-        app.WithMongoDBURL(mongodbURL),
-        app.WithLogHandler(logHandler),
-    )
-    if err != nil {
-        appCtxCancelFunc()
-        return ctx, fmt.Errorf("failed initializing accountsApp: %s", err.Error())
-    }
-
-    err = accountsApp.Run(appCtx)
-    if err != nil {
-        appCtxCancelFunc()
-        return ctx, fmt.Errorf("failed running accountsApp: %s", err.Error())
-    }
-
-    ctx = context.WithValue(ctx, appKey, accountsApp)
-    ctx = context.WithValue(ctx, appCtxCancelFuncKey, appCtxCancelFunc)
-
-    foundLogEntry := logsWatcherFromCtx(ctx).WaitFor("accounts started", logsWatcherWaitForTimeout)
-    if !foundLogEntry {
-        return ctx, fmt.Errorf("accountsApp startup failed (didn't find expected log entry)")
     }
 
     return ctx, nil

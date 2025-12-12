@@ -4,7 +4,6 @@ package publicapi
 
 import (
 	"net/http"
-	"net/url"
 
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
@@ -15,10 +14,74 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-// ListAccountsParams is parameters of list-accounts operation.
+// CreateAccountParams is parameters of createAccount operation.
+type CreateAccountParams struct {
+	// A UUID that allows to trace end-to-end transactions.
+	XWalleteraCorrelationID OptUUID `json:",omitempty,omitzero"`
+}
+
+func unpackCreateAccountParams(packed middleware.Parameters) (params CreateAccountParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "X-Walletera-Correlation-Id",
+			In:   "header",
+		}
+		if v, ok := packed[key]; ok {
+			params.XWalleteraCorrelationID = v.(OptUUID)
+		}
+	}
+	return params
+}
+
+func decodeCreateAccountParams(args [0]string, argsEscaped bool, r *http.Request) (params CreateAccountParams, _ error) {
+	h := uri.NewHeaderDecoder(r.Header)
+	// Decode header: X-Walletera-Correlation-Id.
+	if err := func() error {
+		cfg := uri.HeaderParameterDecodingConfig{
+			Name:    "X-Walletera-Correlation-Id",
+			Explode: false,
+		}
+		if err := h.HasParam(cfg); err == nil {
+			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotXWalleteraCorrelationIDVal uuid.UUID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToUUID(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotXWalleteraCorrelationIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.XWalleteraCorrelationID.SetTo(paramsDotXWalleteraCorrelationIDVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "X-Walletera-Correlation-Id",
+			In:   "header",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// ListAccountsParams is parameters of listAccounts operation.
 type ListAccountsParams struct {
+	ID OptUUID `json:",omitempty,omitzero"`
 	// Customer Id.
-	CustomerId           uuid.UUID
+	CustomerId           OptUUID   `json:",omitempty,omitzero"`
 	Cvu                  OptString `json:",omitempty,omitzero"`
 	CvuAlias             OptString `json:",omitempty,omitzero"`
 	DinoPayAccountNumber OptString `json:",omitempty,omitzero"`
@@ -31,10 +94,21 @@ type ListAccountsParams struct {
 func unpackListAccountsParams(packed middleware.Parameters) (params ListAccountsParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "customerId",
-			In:   "path",
+			Name: "id",
+			In:   "query",
 		}
-		params.CustomerId = packed[key].(uuid.UUID)
+		if v, ok := packed[key]; ok {
+			params.ID = v.(OptUUID)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "customerId",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.CustomerId = v.(OptUUID)
+		}
 	}
 	{
 		key := middleware.ParameterKey{
@@ -84,50 +158,87 @@ func unpackListAccountsParams(packed middleware.Parameters) (params ListAccounts
 	return params
 }
 
-func decodeListAccountsParams(args [1]string, argsEscaped bool, r *http.Request) (params ListAccountsParams, _ error) {
+func decodeListAccountsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListAccountsParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: customerId.
+	// Decode query: id.
 	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
 		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "customerId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
 
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotIDVal uuid.UUID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToUUID(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToUUID(val)
-				if err != nil {
-					return err
-				}
-
-				params.CustomerId = c
+				params.ID.SetTo(paramsDotIDVal)
 				return nil
-			}(); err != nil {
+			}); err != nil {
 				return err
 			}
-		} else {
-			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: customerId.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "customerId",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCustomerIdVal uuid.UUID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToUUID(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotCustomerIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.CustomerId.SetTo(paramsDotCustomerIdVal)
+				return nil
+			}); err != nil {
+				return err
+			}
 		}
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "customerId",
-			In:   "path",
+			In:   "query",
 			Err:  err,
 		}
 	}
@@ -447,123 +558,6 @@ func decodeListAccountsParams(args [1]string, argsEscaped bool, r *http.Request)
 		return params, &ogenerrors.DecodeParamError{
 			Name: "offset",
 			In:   "query",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// PostAccountParams is parameters of postAccount operation.
-type PostAccountParams struct {
-	// A UUID that allows to trace end-to-end transactions.
-	XWalleteraCorrelationID OptUUID `json:",omitempty,omitzero"`
-	// Customer Id.
-	CustomerId uuid.UUID
-}
-
-func unpackPostAccountParams(packed middleware.Parameters) (params PostAccountParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "X-Walletera-Correlation-Id",
-			In:   "header",
-		}
-		if v, ok := packed[key]; ok {
-			params.XWalleteraCorrelationID = v.(OptUUID)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "customerId",
-			In:   "path",
-		}
-		params.CustomerId = packed[key].(uuid.UUID)
-	}
-	return params
-}
-
-func decodePostAccountParams(args [1]string, argsEscaped bool, r *http.Request) (params PostAccountParams, _ error) {
-	h := uri.NewHeaderDecoder(r.Header)
-	// Decode header: X-Walletera-Correlation-Id.
-	if err := func() error {
-		cfg := uri.HeaderParameterDecodingConfig{
-			Name:    "X-Walletera-Correlation-Id",
-			Explode: false,
-		}
-		if err := h.HasParam(cfg); err == nil {
-			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotXWalleteraCorrelationIDVal uuid.UUID
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToUUID(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotXWalleteraCorrelationIDVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.XWalleteraCorrelationID.SetTo(paramsDotXWalleteraCorrelationIDVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "X-Walletera-Correlation-Id",
-			In:   "header",
-			Err:  err,
-		}
-	}
-	// Decode path: customerId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "customerId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToUUID(val)
-				if err != nil {
-					return err
-				}
-
-				params.CustomerId = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "customerId",
-			In:   "path",
 			Err:  err,
 		}
 	}

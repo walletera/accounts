@@ -13,7 +13,7 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-func decodeGetAccountResponse(resp *http.Response) (res GetAccountRes, _ error) {
+func decodeListAccountsResponse(resp *http.Response) (res ListAccountsRes, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -29,7 +29,7 @@ func decodeGetAccountResponse(resp *http.Response) (res GetAccountRes, _ error) 
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response GetAccountOKApplicationJSON
+			var response ListAccountsOKApplicationJSON
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -61,7 +61,7 @@ func decodeGetAccountResponse(resp *http.Response) (res GetAccountRes, _ error) 
 		}
 	case 404:
 		// Code 404.
-		return &GetAccountNotFound{}, nil
+		return &ListAccountsNotFound{}, nil
 	}
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }

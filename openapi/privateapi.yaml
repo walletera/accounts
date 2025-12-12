@@ -9,8 +9,19 @@ paths:
   /accounts:
     get:
       summary: "Allows to retrieve a list of accounts based on search parameters"
-      operationId: "getAccount"
+      operationId: "listAccounts"
       parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+            format: uuid
+        - name: customerId
+          in: query
+          description: "Customer Id"
+          schema:
+            type: string
+            format: uuid
         - in: query
           name: cvu
           schema:
@@ -25,6 +36,24 @@ paths:
           name: dinoPayAccountNumber
           schema:
             type: string
+        - name: limit
+          in: query
+          description: "Number of accounts to return (for pagination)."
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: offset
+          in: query
+          description: "Offset for pagination."
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
       responses:
         "200":
           description: "At least one account was found matching the provided parameters"
@@ -37,11 +66,3 @@ paths:
                   $ref: "account.yaml#/components/schemas/account"
         "404":
           description: "There is no account matching the provided parameters"
-
-components:
-
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT # optional, arbitrary value for documentation purposes

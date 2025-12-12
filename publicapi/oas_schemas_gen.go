@@ -93,7 +93,7 @@ func (s *Account) SetAccountDetails(val AccountAccountDetails) {
 	s.AccountDetails = val
 }
 
-func (*Account) postAccountRes() {}
+func (*Account) createAccountRes() {}
 
 // Extra account details. The details depend on the accountType.
 type AccountAccountDetails struct {
@@ -233,6 +233,8 @@ func (s *ApiError) SetErrorCode(val string) {
 	s.ErrorCode = val
 }
 
+func (*ApiError) listAccountsRes() {}
+
 type BearerAuth struct {
 	Token string
 	Roles []string
@@ -257,6 +259,23 @@ func (s *BearerAuth) SetToken(val string) {
 func (s *BearerAuth) SetRoles(val []string) {
 	s.Roles = val
 }
+
+type CreateAccountBadRequest ApiError
+
+func (*CreateAccountBadRequest) createAccountRes() {}
+
+type CreateAccountConflict ApiError
+
+func (*CreateAccountConflict) createAccountRes() {}
+
+type CreateAccountInternalServerError ApiError
+
+func (*CreateAccountInternalServerError) createAccountRes() {}
+
+// CreateAccountUnauthorized is response for CreateAccount operation.
+type CreateAccountUnauthorized struct{}
+
+func (*CreateAccountUnauthorized) createAccountRes() {}
 
 // Ref: #/components/schemas/currency
 type Currency string
@@ -522,6 +541,11 @@ type ListAccountsOKApplicationJSON []Account
 
 func (*ListAccountsOKApplicationJSON) listAccountsRes() {}
 
+// ListAccountsUnauthorized is response for ListAccounts operation.
+type ListAccountsUnauthorized struct{}
+
+func (*ListAccountsUnauthorized) listAccountsRes() {}
+
 // NewOptInt returns new OptInt with value set to v.
 func NewOptInt(v int) OptInt {
 	return OptInt{
@@ -659,20 +683,3 @@ func (o OptUUID) Or(d uuid.UUID) uuid.UUID {
 	}
 	return d
 }
-
-type PostAccountBadRequest ApiError
-
-func (*PostAccountBadRequest) postAccountRes() {}
-
-type PostAccountConflict ApiError
-
-func (*PostAccountConflict) postAccountRes() {}
-
-type PostAccountInternalServerError ApiError
-
-func (*PostAccountInternalServerError) postAccountRes() {}
-
-// PostAccountUnauthorized is response for PostAccount operation.
-type PostAccountUnauthorized struct{}
-
-func (*PostAccountUnauthorized) postAccountRes() {}

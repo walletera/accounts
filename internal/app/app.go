@@ -12,6 +12,7 @@ import (
     "github.com/walletera/accounts/internal/adapters/mongodb"
     "github.com/walletera/accounts/pkg/logattr"
     "github.com/walletera/accounts/publicapi"
+    "go.mongodb.org/mongo-driver/v2/mongo/options"
 
     "go.mongodb.org/mongo-driver/v2/mongo"
     "go.uber.org/zap"
@@ -105,6 +106,17 @@ func newZapLogger() (*zap.Logger, error) {
 }
 
 func (app *App) startPublicAPIHTTPServer(appLogger *slog.Logger) (*http.Server, error) {
+    // Use the SetServerAPIOptions() method to set the Stable API version to 1
+    serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+    opts := options.Client().ApplyURI(app.mongodbURL).SetServerAPIOptions(serverAPI)
+
+    // Create a new client and connect to the server
+    client, err := mongo.Connect(opts)
+    if err != nil {
+        return nil, fmt.Errorf("error connecting to mongodb: %w", err)
+    }
+    app.mongoClient = client
+
     repository := mongodb.NewAccountsRepository(app.mongoClient, "accounts", "accounts")
 
     server, err := publicapi.NewServer(

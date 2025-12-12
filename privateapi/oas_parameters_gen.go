@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-faster/errors"
+	"github.com/google/uuid"
 	"github.com/ogen-go/ogen/conv"
 	"github.com/ogen-go/ogen/middleware"
 	"github.com/ogen-go/ogen/ogenerrors"
@@ -13,14 +14,39 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-// GetAccountParams is parameters of getAccount operation.
-type GetAccountParams struct {
+// ListAccountsParams is parameters of listAccounts operation.
+type ListAccountsParams struct {
+	ID OptUUID `json:",omitempty,omitzero"`
+	// Customer Id.
+	CustomerId           OptUUID   `json:",omitempty,omitzero"`
 	Cvu                  OptString `json:",omitempty,omitzero"`
 	CvuAlias             OptString `json:",omitempty,omitzero"`
 	DinoPayAccountNumber OptString `json:",omitempty,omitzero"`
+	// Number of accounts to return (for pagination).
+	Limit OptInt `json:",omitempty,omitzero"`
+	// Offset for pagination.
+	Offset OptInt `json:",omitempty,omitzero"`
 }
 
-func unpackGetAccountParams(packed middleware.Parameters) (params GetAccountParams) {
+func unpackListAccountsParams(packed middleware.Parameters) (params ListAccountsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.ID = v.(OptUUID)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "customerId",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.CustomerId = v.(OptUUID)
+		}
+	}
 	{
 		key := middleware.ParameterKey{
 			Name: "cvu",
@@ -48,11 +74,111 @@ func unpackGetAccountParams(packed middleware.Parameters) (params GetAccountPara
 			params.DinoPayAccountNumber = v.(OptString)
 		}
 	}
+	{
+		key := middleware.ParameterKey{
+			Name: "limit",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Limit = v.(OptInt)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "offset",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Offset = v.(OptInt)
+		}
+	}
 	return params
 }
 
-func decodeGetAccountParams(args [0]string, argsEscaped bool, r *http.Request) (params GetAccountParams, _ error) {
+func decodeListAccountsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListAccountsParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: id.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotIDVal uuid.UUID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToUUID(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID.SetTo(paramsDotIDVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: customerId.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "customerId",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCustomerIdVal uuid.UUID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToUUID(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotCustomerIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.CustomerId.SetTo(paramsDotCustomerIdVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "customerId",
+			In:   "query",
+			Err:  err,
+		}
+	}
 	// Decode query: cvu.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
@@ -226,6 +352,148 @@ func decodeGetAccountParams(args [0]string, argsEscaped bool, r *http.Request) (
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "dinoPayAccountNumber",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Set default value for query: limit.
+	{
+		val := int(50)
+		params.Limit.SetTo(val)
+	}
+	// Decode query: limit.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "limit",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotLimitVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotLimitVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Limit.SetTo(paramsDotLimitVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Limit.Get(); ok {
+					if err := func() error {
+						if err := (validate.Int{
+							MinSet:        true,
+							Min:           1,
+							MaxSet:        true,
+							Max:           200,
+							MinExclusive:  false,
+							MaxExclusive:  false,
+							MultipleOfSet: false,
+							MultipleOf:    0,
+							Pattern:       nil,
+						}).Validate(int64(value)); err != nil {
+							return errors.Wrap(err, "int")
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "limit",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Set default value for query: offset.
+	{
+		val := int(0)
+		params.Offset.SetTo(val)
+	}
+	// Decode query: offset.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "offset",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotOffsetVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotOffsetVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Offset.SetTo(paramsDotOffsetVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Offset.Get(); ok {
+					if err := func() error {
+						if err := (validate.Int{
+							MinSet:        true,
+							Min:           0,
+							MaxSet:        false,
+							Max:           0,
+							MinExclusive:  false,
+							MaxExclusive:  false,
+							MultipleOfSet: false,
+							MultipleOf:    0,
+							Pattern:       nil,
+						}).Validate(int64(value)); err != nil {
+							return errors.Wrap(err, "int")
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "offset",
 			In:   "query",
 			Err:  err,
 		}

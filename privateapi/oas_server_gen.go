@@ -8,12 +8,12 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
-	// GetAccount implements getAccount operation.
+	// ListAccounts implements listAccounts operation.
 	//
 	// Allows to retrieve a list of accounts based on search parameters.
 	//
 	// GET /accounts
-	GetAccount(ctx context.Context, params GetAccountParams) (GetAccountRes, error)
+	ListAccounts(ctx context.Context, params ListAccountsParams) (ListAccountsRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

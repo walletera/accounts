@@ -33,8 +33,8 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 }
 
 var operationRolesBearerAuth = map[string][]string{
-	ListAccountsOperation: []string{},
-	PostAccountOperation:  []string{},
+	CreateAccountOperation: []string{},
+	ListAccountsOperation:  []string{},
 }
 
 func (s *Server) securityBearerAuth(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {

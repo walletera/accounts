@@ -13,20 +13,20 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
-// ListAccounts implements list-accounts operation.
-//
-// Retrieves a list of accounts based on search parameters.
-//
-// GET /{customerId}/accounts
-func (UnimplementedHandler) ListAccounts(ctx context.Context, params ListAccountsParams) (r ListAccountsRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// PostAccount implements postAccount operation.
+// CreateAccount implements createAccount operation.
 //
 // Creates a new account.
 //
-// POST /{customerId}/accounts
-func (UnimplementedHandler) PostAccount(ctx context.Context, req *Account, params PostAccountParams) (r PostAccountRes, _ error) {
+// POST /accounts
+func (UnimplementedHandler) CreateAccount(ctx context.Context, req *Account, params CreateAccountParams) (r CreateAccountRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListAccounts implements listAccounts operation.
+//
+// Retrieves a list of accounts based on search parameters.
+//
+// GET /accounts
+func (UnimplementedHandler) ListAccounts(ctx context.Context, params ListAccountsParams) (r ListAccountsRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

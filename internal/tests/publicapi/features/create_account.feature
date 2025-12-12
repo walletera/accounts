@@ -3,9 +3,9 @@ Feature: Create account
   Background: the accounts service is up and running
     Given a running accounts service
 
-  Scenario: a account is created successfully
+  Scenario: an account is created successfully
     Given an authorized walletera customer
-    When  the customer sends a POST request to the endpoint /f423bd83-a401-4264-813b-83d7e4f057d6/accounts:
+    When  the accounts service receives the following request on the endpoint /accounts:
     """json
     {
       "id": "bdf48329-d870-4fb4-882a-0fa0aef28a63",
@@ -24,3 +24,7 @@ Feature: Create account
     }
     """
     Then the endpoint returns the http status code 201
+    And the accounts service produces the following log
+    """
+    account saved
+    """

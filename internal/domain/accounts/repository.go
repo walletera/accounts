@@ -8,14 +8,8 @@ import (
     "github.com/walletera/werrors"
 )
 
-type Account struct {
-    ID               uuid.UUID
-    AggregateVersion uint64
-    Data             publicapi.Account
-}
-
 type Iterator interface {
-    Next() (bool, Account, error)
+    Next() (bool, publicapi.Account, error)
 }
 
 type QueryResult struct {
@@ -24,7 +18,7 @@ type QueryResult struct {
 }
 
 type Repository interface {
-    GetAccount(ctx context.Context, id uuid.UUID) (Account, werrors.WError)
-    SaveAccount(ctx context.Context, payment Account) werrors.WError
+    GetAccount(ctx context.Context, id uuid.UUID) (publicapi.Account, werrors.WError)
+    SaveAccount(ctx context.Context, payment publicapi.Account) werrors.WError
     SearchAccounts(ctx context.Context, listAccountsParams publicapi.ListAccountsParams) (QueryResult, werrors.WError)
 }

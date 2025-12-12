@@ -60,7 +60,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				// Leaf node.
 				switch r.Method {
 				case "GET":
-					s.handleGetAccountRequest([0]string{}, elemIsEscaped, w, r)
+					s.handleListAccountsRequest([0]string{}, elemIsEscaped, w, r)
 				default:
 					s.notAllowed(w, r, "GET")
 				}
@@ -166,9 +166,9 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 				// Leaf node.
 				switch method {
 				case "GET":
-					r.name = GetAccountOperation
+					r.name = ListAccountsOperation
 					r.summary = "Allows to retrieve a list of accounts based on search parameters"
-					r.operationID = "getAccount"
+					r.operationID = "listAccounts"
 					r.operationGroup = ""
 					r.pathPattern = "/accounts"
 					r.args = args

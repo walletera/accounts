@@ -13,11 +13,11 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
-// GetAccount implements getAccount operation.
+// ListAccounts implements listAccounts operation.
 //
 // Allows to retrieve a list of accounts based on search parameters.
 //
 // GET /accounts
-func (UnimplementedHandler) GetAccount(ctx context.Context, params GetAccountParams) (r GetAccountRes, _ error) {
+func (UnimplementedHandler) ListAccounts(ctx context.Context, params ListAccountsParams) (r ListAccountsRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
