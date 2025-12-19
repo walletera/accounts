@@ -58,7 +58,15 @@ func (a AccountsRepository) SearchAccounts(ctx context.Context, listAccountsPara
     filter := bson.M{}
 
     if listAccountsParams.ID.IsSet() {
-        filter["_id"] = listAccountsParams.ID
+        filter["_id"] = listAccountsParams.ID.Value
+    }
+
+    if listAccountsParams.ID.IsSet() {
+        filter["accountDetails.cvu"] = listAccountsParams.Cvu.Value
+    }
+
+    if listAccountsParams.ID.IsSet() {
+        filter["accountDetails.account_number"] = listAccountsParams.DinoPayAccountNumber.Value
     }
 
     coll := a.client.Database(a.dbName).Collection(a.collectionName)

@@ -61,6 +61,6 @@ func (h Handler) CreateAccount(ctx context.Context, req *publicapi.Account, _ pu
             ErrorCode:    werr.Code().String(),
         }, nil
     }
-    h.logger.Info("account saved")
+    h.logger.With(logattr.AccountId(req.ID.String())).Info("account saved")
     return req, nil
 }

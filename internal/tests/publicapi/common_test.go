@@ -3,7 +3,10 @@ package publicapi
 import (
     "context"
     "fmt"
+    "io"
     "log/slog"
+    "net/http"
+    "strings"
     "time"
 
     "github.com/walletera/accounts/internal/app"
@@ -42,7 +45,7 @@ func beforeScenarioHook(ctx context.Context, _ *godog.Scenario) (context.Context
     }
 
     // cleanup database before each scenario
-    err = client.Database("payments").Collection("payments").Drop(ctx)
+    err = client.Database("accounts").Collection("accounts").Drop(ctx)
     if err != nil {
         return nil, err
     }
@@ -65,6 +68,88 @@ func afterScenarioHook(ctx context.Context, _ *godog.Scenario, err error) (conte
     }
 
     return ctx, nil
+}
+
+func aRunningAccountsService(ctx context.Context) (context.Context, error) {
+    logHandler := logsWatcherFromCtx(ctx).DecoratedHandler()
+
+    appCtx, appCtxCancelFunc := context.WithCancel(ctx)
+
+    paymentsRMApp, err := app.NewApp(
+        app.WithPublicAPIConfig(app.PublicAPIConfig{
+            PublicAPIHttpServerPort: publicApiHttpServerPort,
+        }),
+        app.WithMongoDBURL(mongodbURL),
+        app.WithLogHandler(logHandler),
+    )
+    if err != nil {
+        appCtxCancelFunc()
+        return ctx, fmt.Errorf("failed initializing paymentsRMApp: %s", err.Error())
+    }
+
+    err = paymentsRMApp.Run(appCtx)
+    if err != nil {
+        appCtxCancelFunc()
+        return ctx, fmt.Errorf("failed running accounts app: %s", err.Error())
+    }
+
+    ctx = context.WithValue(ctx, appKey, paymentsRMApp)
+    ctx = context.WithValue(ctx, appCtxCancelFuncKey, appCtxCancelFunc)
+
+    foundLogEntry := logsWatcherFromCtx(ctx).WaitFor("accounts started", logsWatcherWaitForTimeout)
+    if !foundLogEntry {
+        return ctx, fmt.Errorf("accounts app startup failed (didn't find expected log entry)")
+    }
+
+    return ctx, nil
+}
+
+func anAuthorizedWalleteraCustomer(ctx context.Context) (context.Context, error) {
+    // TODO
+    return ctx, nil
+}
+
+func createAccount(ctx context.Context, requestBody string) (context.Context, error) {
+    url := fmt.Sprintf("http://127.0.0.1:%d/accounts", publicApiHttpServerPort)
+    bodyReader := strings.NewReader(requestBody)
+    request, err := http.NewRequest(http.MethodPost, url, bodyReader)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create request: %w", err)
+    }
+
+    request.Header.Set("Content-Type", "application/json")
+    request.Header.Set("Authorization", "Bearer ajsonwebtoken")
+    resp, err := http.DefaultClient.Do(request)
+    if err != nil {
+        return nil, fmt.Errorf("failed to send request: %w", err)
+    }
+
+    defer func(Body io.ReadCloser) {
+        err := Body.Close()
+        if err != nil {
+            panic(err)
+        }
+    }(resp.Body)
+
+    ctx = context.WithValue(ctx, responseStatusCodeContextKey, resp.StatusCode)
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return nil, fmt.Errorf("failed reading response body: %w", err)
+    }
+    ctx = context.WithValue(ctx, createAccountResponseBodyKey, body)
+    return ctx, nil
+}
+
+func responseStatusCodeFromCtx(ctx context.Context) int {
+    value := ctx.Value(responseStatusCodeContextKey)
+    if value == nil {
+        panic("responseStatusCodeContextKey not found in context")
+    }
+    createAccountResponseStatusCode, ok := value.(int)
+    if !ok {
+        panic("responseStatusCodeContextKey has invalid type")
+    }
+    return createAccountResponseStatusCode
 }
 
 func logsWatcherFromCtx(ctx context.Context) *slogwatcher.Watcher {
