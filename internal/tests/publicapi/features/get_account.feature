@@ -11,9 +11,8 @@ Feature: Get Account by Id
     When the accounts service receives a GET request on endpoint /accounts with filters <filters>
     Then the endpoint returns the http status code <statusCode>
 
-
     Examples:
-      | accountId                                | statusCode |
+      | filters                                  | statusCode |
       | ?id=bdf48329-d870-4fb4-882a-0fa0aef28a63 | 200        |
       | ?cvu=6677889900112233445566              | 200        |
       | ?dinopayAccountNumber=DP-123456789       | 200        |

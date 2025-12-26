@@ -81,7 +81,7 @@ paths:
             type: string
             pattern: '^[\w\.-]{6,20}$'
         - in: query
-          name: dinoPayAccountNumber
+          name: dinopayAccountNumber
           schema:
             type: string
         - name: limit

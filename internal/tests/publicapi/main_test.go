@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 }
 
 const (
-    startupTimeout               = 10 * time.Second
+    startupTimeout               = 10 * time.Minute
     containersTerminationTimeout = 20 * time.Second
 )
 

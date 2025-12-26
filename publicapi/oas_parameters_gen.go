@@ -84,7 +84,7 @@ type ListAccountsParams struct {
 	CustomerId           OptUUID   `json:",omitempty,omitzero"`
 	Cvu                  OptString `json:",omitempty,omitzero"`
 	CvuAlias             OptString `json:",omitempty,omitzero"`
-	DinoPayAccountNumber OptString `json:",omitempty,omitzero"`
+	DinopayAccountNumber OptString `json:",omitempty,omitzero"`
 	// Number of accounts to return (for pagination).
 	Limit OptInt `json:",omitempty,omitzero"`
 	// Offset for pagination.
@@ -130,11 +130,11 @@ func unpackListAccountsParams(packed middleware.Parameters) (params ListAccounts
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "dinoPayAccountNumber",
+			Name: "dinopayAccountNumber",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.DinoPayAccountNumber = v.(OptString)
+			params.DinopayAccountNumber = v.(OptString)
 		}
 	}
 	{
@@ -378,17 +378,17 @@ func decodeListAccountsParams(args [0]string, argsEscaped bool, r *http.Request)
 			Err:  err,
 		}
 	}
-	// Decode query: dinoPayAccountNumber.
+	// Decode query: dinopayAccountNumber.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "dinoPayAccountNumber",
+			Name:    "dinopayAccountNumber",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotDinoPayAccountNumberVal string
+				var paramsDotDinopayAccountNumberVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -400,12 +400,12 @@ func decodeListAccountsParams(args [0]string, argsEscaped bool, r *http.Request)
 						return err
 					}
 
-					paramsDotDinoPayAccountNumberVal = c
+					paramsDotDinopayAccountNumberVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.DinoPayAccountNumber.SetTo(paramsDotDinoPayAccountNumberVal)
+				params.DinopayAccountNumber.SetTo(paramsDotDinopayAccountNumberVal)
 				return nil
 			}); err != nil {
 				return err
@@ -414,7 +414,7 @@ func decodeListAccountsParams(args [0]string, argsEscaped bool, r *http.Request)
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "dinoPayAccountNumber",
+			Name: "dinopayAccountNumber",
 			In:   "query",
 			Err:  err,
 		}

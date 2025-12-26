@@ -27,8 +27,10 @@ func (h Handler) ListAccounts(ctx context.Context, params publicapi.ListAccounts
             "failed listing accounts",
             logattr.Error(err.Error()),
         )
-        // FIXME should be internal error
-        return &publicapi.ListAccountsNotFound{}, nil
+        return &publicapi.ApiError{
+            ErrorMessage: err.Message(),
+            ErrorCode:    err.Code().String(),
+        }, nil
     }
     var accountList []publicapi.Account
     for {

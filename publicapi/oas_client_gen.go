@@ -335,15 +335,15 @@ func (c *Client) sendListAccounts(ctx context.Context, params ListAccountsParams
 		}
 	}
 	{
-		// Encode "dinoPayAccountNumber" parameter.
+		// Encode "dinopayAccountNumber" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "dinoPayAccountNumber",
+			Name:    "dinopayAccountNumber",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.DinoPayAccountNumber.Get(); ok {
+			if val, ok := params.DinopayAccountNumber.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil

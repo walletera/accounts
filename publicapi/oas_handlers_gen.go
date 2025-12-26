@@ -391,9 +391,9 @@ func (s *Server) handleListAccountsRequest(args [0]string, argsEscaped bool, w h
 					In:   "query",
 				}: params.CvuAlias,
 				{
-					Name: "dinoPayAccountNumber",
+					Name: "dinopayAccountNumber",
 					In:   "query",
-				}: params.DinoPayAccountNumber,
+				}: params.DinopayAccountNumber,
 				{
 					Name: "limit",
 					In:   "query",

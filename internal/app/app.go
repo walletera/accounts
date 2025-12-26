@@ -8,6 +8,7 @@ import (
     "net/http"
     "time"
 
+    "github.com/ogen-go/ogen/middleware"
     "github.com/walletera/accounts/internal/adapters/input/http/public"
     "github.com/walletera/accounts/internal/adapters/mongodb"
     "github.com/walletera/accounts/pkg/logattr"
@@ -106,9 +107,14 @@ func newZapLogger() (*zap.Logger, error) {
 }
 
 func (app *App) startPublicAPIHTTPServer(appLogger *slog.Logger) (*http.Server, error) {
-    // Use the SetServerAPIOptions() method to set the Stable API version to 1
     serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-    opts := options.Client().ApplyURI(app.mongodbURL).SetServerAPIOptions(serverAPI)
+    bsonOpts := &options.BSONOptions{
+        UseJSONStructTags: true,
+    }
+    opts := options.Client().
+        ApplyURI(app.mongodbURL).
+        SetServerAPIOptions(serverAPI).
+        SetBSONOptions(bsonOpts)
 
     // Create a new client and connect to the server
     client, err := mongo.Connect(opts)
@@ -119,12 +125,21 @@ func (app *App) startPublicAPIHTTPServer(appLogger *slog.Logger) (*http.Server, 
 
     repository := mongodb.NewAccountsRepository(app.mongoClient, "accounts", "accounts")
 
+    reqLoggingMiddleware := func(req middleware.Request, next middleware.Next) (middleware.Response, error) {
+        app.logger.
+            With("http-method", req.Raw.Method).
+            With("http-path", req.Raw.URL.String()).
+            Debug("handling request")
+        return next(req)
+    }
+
     server, err := publicapi.NewServer(
         public.NewHandler(
             repository,
             appLogger.With(logattr.Component("http.PublicAPIHandler")),
         ),
         &public.SecurityHandler{},
+        publicapi.WithMiddleware(reqLoggingMiddleware),
     )
     if err != nil {
         panic(err)

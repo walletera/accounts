@@ -37,7 +37,7 @@ func InitializeGetPaymentFeature(ctx *godog.ScenarioContext) {
     ctx.Before(beforeScenarioHook)
     ctx.Given(`^a running accounts service$`, aRunningAccountsService)
     ctx.Given(`^a list of existing accounts:$`, aListOfExistingAccounts)
-    ctx.When(`^the accounts service receives a GET request on endpoint /accounts with account id (.+)$`, theAccountsServiceReceivesAGETRequestOnEndpointAccountsWithAccountId)
+    ctx.When(`^the accounts service receives a GET request on endpoint \/accounts with filters (.+)$`, theAccountsServiceReceivesAGETRequestOnEndpointAccountsWithFilters)
     ctx.Step(`^the endpoint returns the http status code (\d+)$`, theEndpointReturnsTheHttpStatusCode)
     ctx.After(afterScenarioHook)
 }
@@ -72,8 +72,8 @@ func aListOfExistingAccounts(ctx context.Context, accountListJson *godog.DocStri
     return ctx, nil
 }
 
-func theAccountsServiceReceivesAGETRequestOnEndpointAccountsWithAccountId(ctx context.Context, accountId string) (context.Context, error) {
-    url := fmt.Sprintf("http://127.0.0.1:%d/accounts?id=%s", publicApiHttpServerPort, accountId)
+func theAccountsServiceReceivesAGETRequestOnEndpointAccountsWithFilters(ctx context.Context, filters string) (context.Context, error) {
+    url := fmt.Sprintf("http://127.0.0.1:%d/accounts%s", publicApiHttpServerPort, filters)
     request, err := http.NewRequest(http.MethodGet, url, nil)
     if err != nil {
         return nil, fmt.Errorf("failed to create request: %w", err)

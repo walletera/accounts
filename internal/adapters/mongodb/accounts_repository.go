@@ -61,12 +61,12 @@ func (a AccountsRepository) SearchAccounts(ctx context.Context, listAccountsPara
         filter["_id"] = listAccountsParams.ID.Value
     }
 
-    if listAccountsParams.ID.IsSet() {
-        filter["accountDetails.cvu"] = listAccountsParams.Cvu.Value
+    if listAccountsParams.Cvu.IsSet() {
+        filter["accountDetails.oneof.cvuaccountdetails.routingInfo.oneof.cvucvuroutinginfo.cvu"] = listAccountsParams.Cvu.Value
     }
 
-    if listAccountsParams.ID.IsSet() {
-        filter["accountDetails.account_number"] = listAccountsParams.DinoPayAccountNumber.Value
+    if listAccountsParams.DinopayAccountNumber.IsSet() {
+        filter["accountDetails.oneof.dinopayaccountdetails.accountNumber"] = listAccountsParams.DinopayAccountNumber.Value
     }
 
     coll := a.client.Database(a.dbName).Collection(a.collectionName)
