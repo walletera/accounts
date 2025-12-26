@@ -1,19 +1,19 @@
 package httpauth
 
 import (
-    "context"
+	"context"
 
-    "github.com/walletera/accounts/publicapi"
+	"github.com/walletera/accounts/publicapi"
 )
 
 type SecuritySource struct {
-    token string
+	token string
 }
 
 func NewSecuritySource(token string) *SecuritySource {
-    return &SecuritySource{token: token}
+	return &SecuritySource{token: token}
 }
 
 func (s *SecuritySource) BearerAuth(ctx context.Context, operationName publicapi.OperationName) (publicapi.BearerAuth, error) {
-    return publicapi.BearerAuth{Token: s.token}, nil
+	return publicapi.BearerAuth{Token: s.token}, nil
 }
