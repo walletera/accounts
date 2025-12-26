@@ -47,8 +47,6 @@ func (app *App) Run(ctx context.Context) error {
         New(app.logHandler).
         With(logattr.ServiceName("accounts"))
 
-    app.logger.Info("accounts started")
-
     var httpServersToStop []*http.Server
 
     if app.publicAPIConfig.Set {
@@ -60,6 +58,8 @@ func (app *App) Run(ctx context.Context) error {
         httpServersToStop = append(httpServersToStop, publicApiHttpServer)
     }
     app.httpServersToStop = httpServersToStop
+
+    app.logger.Info("accounts started")
 
     return nil
 }

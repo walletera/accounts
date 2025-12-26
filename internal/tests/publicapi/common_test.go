@@ -114,14 +114,14 @@ func createAccount(ctx context.Context, requestBody string) (context.Context, er
     bodyReader := strings.NewReader(requestBody)
     request, err := http.NewRequest(http.MethodPost, url, bodyReader)
     if err != nil {
-        return nil, fmt.Errorf("failed to create request: %w", err)
+        return ctx, fmt.Errorf("failed to create request: %w", err)
     }
 
     request.Header.Set("Content-Type", "application/json")
     request.Header.Set("Authorization", "Bearer ajsonwebtoken")
     resp, err := http.DefaultClient.Do(request)
     if err != nil {
-        return nil, fmt.Errorf("failed to send request: %w", err)
+        return ctx, fmt.Errorf("failed to send request: %w", err)
     }
 
     defer func(Body io.ReadCloser) {
@@ -134,7 +134,7 @@ func createAccount(ctx context.Context, requestBody string) (context.Context, er
     ctx = context.WithValue(ctx, responseStatusCodeContextKey, resp.StatusCode)
     body, err := io.ReadAll(resp.Body)
     if err != nil {
-        return nil, fmt.Errorf("failed reading response body: %w", err)
+        return ctx, fmt.Errorf("failed reading response body: %w", err)
     }
     ctx = context.WithValue(ctx, createAccountResponseBodyKey, body)
     return ctx, nil
