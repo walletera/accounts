@@ -34,13 +34,15 @@ func (h Handler) ListAccounts(ctx context.Context, params publicapi.ListAccounts
 	}
 	var accountList []publicapi.Account
 	for {
-		ok, account, err := result.Iterator.Next()
-		if err != nil {
+		ok, account, iteratorErr := result.Iterator.Next()
+		if iteratorErr != nil {
 			h.logger.Error(
 				"failed listing accounts",
-				logattr.Error(err.Error()),
+				logattr.Error(iteratorErr.Error()),
 			)
-			return &publicapi.ListAccountsNotFound{}, nil
+			return &publicapi.ApiError{
+				ErrorMessage: iteratorErr.Error(),
+			}, nil
 		}
 		if !ok {
 			break
