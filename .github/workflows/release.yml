@@ -92,7 +92,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/payments-read-model:${{ steps.version.outputs.next_version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/accounts:${{ steps.version.outputs.next_version }}
 
     needs:
       - test
