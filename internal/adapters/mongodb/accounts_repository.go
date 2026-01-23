@@ -47,7 +47,7 @@ func (a AccountsRepository) SaveAccount(ctx context.Context, account publicapi.A
 	_, err := coll.InsertOne(ctx, accountBSON)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return werrors.NewNonRetryableInternalError("duplicate key error: %s", err.Error())
+			return werrors.NewResourceAlreadyExistError("duplicate key error: %s", err.Error())
 		}
 		return werrors.NewRetryableInternalError("failed to save account: %s", err.Error())
 	}

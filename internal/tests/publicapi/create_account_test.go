@@ -33,6 +33,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Before(beforeScenarioHook)
 	ctx.Step(`^a running accounts service$`, aRunningAccountsService)
 	ctx.Step(`^an authorized walletera customer$`, anAuthorizedWalleteraCustomer)
+	ctx.Given(`^a list of existing accounts:$`, aListOfExistingAccounts)
 	ctx.Step(`^the accounts service receives the following request on the endpoint /accounts:$`, theAccountsServiceReceivesAPostRequestOnEndpointAccountWithTheFollowingBody)
 	ctx.Step(`^the endpoint returns the http status code (\d+)$`, theEndpointReturnsTheHttpStatusCode)
 	ctx.Step(`^the accounts service produces the following log$`, theAccountsServiceProducesTheFollowingLog)

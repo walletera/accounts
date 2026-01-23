@@ -18,7 +18,7 @@ Feature: Create account
         "cuit": "23679876453",
         "routingInfo": {
           "cvuRoutingInfoType": "cvu",
-          "cvu": "1122334455667788554433"
+          "cvu": "1122334400007788554433"
         }
       }
     }
@@ -28,3 +28,26 @@ Feature: Create account
     """
     account saved
     """
+
+  Scenario: trying to create a dinopay account that already exist results in a 409 returned by the api
+    Given an authorized walletera customer
+    And a list of existing accounts:
+    """
+    data/existing_accounts.json
+    """
+    When  the accounts service receives the following request on the endpoint /accounts:
+    """json
+    {
+      "id": "bdf48329-d870-4fb4-882a-0fa0aef28a63",
+      "customerId": "f423bd83-a401-4264-813b-83d7e4f057d6",
+      "currency": "ARS",
+      "institutionName": "dinopay",
+      "institutionId": "dinopay",
+      "accountDetails": {
+        "accountType": "dinopay",
+        "accountHolder": "John Doe",
+        "accountNumber": "DP-1234567890"
+      }
+    }
+    """
+    Then the endpoint returns the http status code 409

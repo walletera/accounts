@@ -2,10 +2,12 @@ package publicapi
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -75,7 +77,7 @@ func aRunningAccountsService(ctx context.Context) (context.Context, error) {
 
 	appCtx, appCtxCancelFunc := context.WithCancel(ctx)
 
-	paymentsRMApp, err := app.NewApp(
+	accountsApp, err := app.NewApp(
 		app.WithPublicAPIConfig(app.PublicAPIConfig{
 			PublicAPIHttpServerPort: publicApiHttpServerPort,
 		}),
@@ -84,17 +86,17 @@ func aRunningAccountsService(ctx context.Context) (context.Context, error) {
 	)
 	if err != nil {
 		appCtxCancelFunc()
-		return ctx, fmt.Errorf("failed initializing paymentsRMApp: %s", err.Error())
+		return ctx, fmt.Errorf("failed initializing accountsApp: %s", err.Error())
 	}
 
-	err = paymentsRMApp.Run(appCtx)
+	ctx = context.WithValue(ctx, appKey, accountsApp)
+	ctx = context.WithValue(ctx, appCtxCancelFuncKey, appCtxCancelFunc)
+
+	err = accountsApp.Run(appCtx)
 	if err != nil {
 		appCtxCancelFunc()
 		return ctx, fmt.Errorf("failed running accounts app: %s", err.Error())
 	}
-
-	ctx = context.WithValue(ctx, appKey, paymentsRMApp)
-	ctx = context.WithValue(ctx, appCtxCancelFuncKey, appCtxCancelFunc)
 
 	foundLogEntry := logsWatcherFromCtx(ctx).WaitFor("accounts started", logsWatcherWaitForTimeout)
 	if !foundLogEntry {
@@ -140,6 +142,36 @@ func createAccount(ctx context.Context, requestBody string) (context.Context, er
 	return ctx, nil
 }
 
+func aListOfExistingAccounts(ctx context.Context, accountListJson *godog.DocString) (context.Context, error) {
+	if accountListJson == nil || len(accountListJson.Content) == 0 {
+		return ctx, fmt.Errorf("the accountListJson is empty or was not defined")
+	}
+
+	rawEventsList, err := os.ReadFile(accountListJson.Content)
+	if err != nil {
+		return ctx, fmt.Errorf("error reading accounts JSON file: %w", err)
+	}
+
+	var accountList []json.RawMessage
+	err = json.Unmarshal(rawEventsList, &accountList)
+	if err != nil {
+		return ctx, fmt.Errorf("error unmarshalling accounts JSON file: %w", err)
+	}
+
+	for _, account := range accountList {
+		ctx, err = createAccount(ctx, string(account))
+		if err != nil {
+			return ctx, err
+		}
+		logsWatcherFromCtx(ctx).WaitFor(
+			"account saved",
+			logsWatcherWaitForTimeout,
+		)
+	}
+
+	return ctx, nil
+}
+
 func responseStatusCodeFromCtx(ctx context.Context) int {
 	value := ctx.Value(responseStatusCodeContextKey)
 	if value == nil {
@@ -167,13 +199,13 @@ func logsWatcherFromCtx(ctx context.Context) *slogwatcher.Watcher {
 func appFromCtx(ctx context.Context) *app.App {
 	value := ctx.Value(appKey)
 	if value == nil {
-		panic("paymentsRMApp not found in context")
+		panic("accounts app not found in context")
 	}
-	paymentsRMApp, ok := value.(*app.App)
+	accountsApp, ok := value.(*app.App)
 	if !ok {
-		panic("paymentsRMApp has invalid type")
+		panic("accounts app has invalid type")
 	}
-	return paymentsRMApp
+	return accountsApp
 }
 
 func newZapHandler() (slog.Handler, error) {

@@ -43,7 +43,7 @@ paths:
         "401":
           description: "Unauthorized"
         "409":
-          description: "The payment already exist"
+          description: "The account already exist"
           content:
             application/json:
               schema:

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/cucumber/godog"
@@ -40,36 +39,6 @@ func InitializeGetPaymentFeature(ctx *godog.ScenarioContext) {
 	ctx.When(`^the accounts service receives a GET request on endpoint \/accounts with filters (.+)$`, theAccountsServiceReceivesAGETRequestOnEndpointAccountsWithFilters)
 	ctx.Step(`^the endpoint returns the http status code (\d+)$`, theEndpointReturnsTheHttpStatusCode)
 	ctx.After(afterScenarioHook)
-}
-
-func aListOfExistingAccounts(ctx context.Context, accountListJson *godog.DocString) (context.Context, error) {
-	if accountListJson == nil || len(accountListJson.Content) == 0 {
-		return ctx, fmt.Errorf("the accountListJson is empty or was not defined")
-	}
-
-	rawEventsList, err := os.ReadFile(accountListJson.Content)
-	if err != nil {
-		return ctx, fmt.Errorf("error reading accounts JSON file: %w", err)
-	}
-
-	var accountList []json.RawMessage
-	err = json.Unmarshal(rawEventsList, &accountList)
-	if err != nil {
-		return ctx, fmt.Errorf("error unmarshalling accounts JSON file: %w", err)
-	}
-
-	for _, account := range accountList {
-		ctx, err = createAccount(ctx, string(account))
-		if err != nil {
-			return ctx, err
-		}
-		logsWatcherFromCtx(ctx).WaitFor(
-			"account saved",
-			logsWatcherWaitForTimeout,
-		)
-	}
-
-	return ctx, nil
 }
 
 func theAccountsServiceReceivesAGETRequestOnEndpointAccountsWithFilters(ctx context.Context, filters string) (context.Context, error) {

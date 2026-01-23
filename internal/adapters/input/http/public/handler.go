@@ -7,6 +7,7 @@ import (
 	"github.com/walletera/accounts/internal/domain/accounts"
 	"github.com/walletera/accounts/pkg/logattr"
 	"github.com/walletera/accounts/publicapi"
+	"github.com/walletera/werrors"
 )
 
 type Handler struct {
@@ -60,10 +61,18 @@ func (h Handler) CreateAccount(ctx context.Context, req *publicapi.Account, _ pu
 			"failed saving payment",
 			logattr.Error(werr.Message()),
 		)
-		return &publicapi.CreateAccountInternalServerError{
-			ErrorMessage: werr.Message(),
-			ErrorCode:    werr.Code().String(),
-		}, nil
+		switch werr.Code() {
+		case werrors.ResourceAlreadyExistErrorCode:
+			return &publicapi.CreateAccountConflict{
+				ErrorMessage: werr.Message(),
+				ErrorCode:    werr.Code().String(),
+			}, nil
+		default:
+			return &publicapi.CreateAccountInternalServerError{
+				ErrorMessage: werr.Message(),
+				ErrorCode:    werr.Code().String(),
+			}, nil
+		}
 	}
 	h.logger.With(logattr.AccountId(req.ID.String())).Info("account saved")
 	return req, nil
